@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Stethoscope } from "lucide-react";
 import AnatomyViewer from "@/components/AnatomyViewer";
 import ChatInterface from "@/components/ChatInterface";
+import LocationMap from "@/components/LocationMap";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
@@ -65,7 +66,7 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto mb-8">
           {/* Left: Anatomy Viewer */}
           <AnatomyViewer 
             selectedBodyPart={selectedBodyPart}
@@ -74,6 +75,11 @@ const Dashboard = () => {
 
           {/* Right: Chat Interface */}
           <ChatInterface selectedBodyPart={selectedBodyPart} />
+        </div>
+
+        {/* Location Map */}
+        <div className="max-w-7xl mx-auto">
+          <LocationMap />
         </div>
       </main>
     </div>

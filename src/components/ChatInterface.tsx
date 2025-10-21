@@ -3,9 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2, Bot, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Send, Loader2, Bot, User, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Message {
   role: "user" | "assistant";
@@ -17,6 +21,13 @@ interface ChatInterfaceProps {
 }
 
 const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
+  const [botName, setBotName] = useState(() => 
+    localStorage.getItem('chatBotName') || 'AI Health Assistant'
+  );
+  const [tempBotName, setTempBotName] = useState(botName);
+  const [language, setLanguage] = useState(() => 
+    localStorage.getItem('chatLanguage') || 'en'
+  );
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -28,6 +39,15 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const handleSaveBotName = () => {
+    setBotName(tempBotName);
+    localStorage.setItem('chatBotName', tempBotName);
+    toast({
+      title: "Success",
+      description: "Chatbot name updated successfully!",
+    });
+  };
+
   useEffect(() => {
     if (selectedBodyPart) {
       setInput(`Tell me about the ${selectedBodyPart} and common health issues related to it.`);
@@ -37,6 +57,10 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem('chatLanguage', language);
+  }, [language]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -50,7 +74,8 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
       const { data, error } = await supabase.functions.invoke("health-chat", {
         body: { 
           messages: [...messages, userMessage],
-          selectedBodyPart 
+          selectedBodyPart,
+          language 
         },
       });
 
@@ -77,9 +102,54 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
   return (
     <Card className="shadow-lg border-border flex flex-col h-[calc(100vh-12rem)]">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bot className="w-5 h-5 text-primary" />
-          AI Health Assistant
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-primary" />
+            {botName}
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="w-32 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+                <SelectItem value="fr">Français</SelectItem>
+                <SelectItem value="de">Deutsch</SelectItem>
+                <SelectItem value="hi">हिन्दी</SelectItem>
+                <SelectItem value="ar">العربية</SelectItem>
+                <SelectItem value="zh">中文</SelectItem>
+                <SelectItem value="ja">日本語</SelectItem>
+              </SelectContent>
+            </Select>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Chatbot Settings</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bot-name">Chatbot Name</Label>
+                    <Input
+                      id="bot-name"
+                      value={tempBotName}
+                      onChange={(e) => setTempBotName(e.target.value)}
+                      placeholder="Enter chatbot name"
+                    />
+                  </div>
+                  <Button onClick={handleSaveBotName} className="w-full">
+                    Save Changes
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0">

@@ -11,12 +11,23 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, selectedBodyPart } = await req.json();
+    const { messages, selectedBodyPart, language = 'en' } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    const languageMap: Record<string, string> = {
+      'en': 'English',
+      'es': 'Spanish',
+      'fr': 'French',
+      'de': 'German',
+      'hi': 'Hindi',
+      'ar': 'Arabic',
+      'zh': 'Chinese',
+      'ja': 'Japanese'
+    };
 
     let systemPrompt = `You are an AI health assistant called "I Am Doctor". You provide helpful, accurate medical information and guidance. 
     
@@ -26,7 +37,8 @@ serve(async (req) => {
     - Recommend consulting healthcare professionals for serious conditions
     - Suggest exercises, yoga, and lifestyle modifications when appropriate
     - When discussing medications, always emphasize consulting a doctor first
-    - Be concise but informative`;
+    - Be concise but informative
+    - CRITICAL: Always respond in ${languageMap[language] || 'English'} language. The user has selected this language preference.`;
 
     if (selectedBodyPart) {
       systemPrompt += `\n\nThe user has selected the ${selectedBodyPart}. Provide relevant information about this body part and common health issues related to it.`;
