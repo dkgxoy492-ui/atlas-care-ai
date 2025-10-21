@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import anatomyMaleFront from "@/assets/anatomy-male-front.png";
 import anatomyMaleBack from "@/assets/anatomy-male-back.png";
+import anatomyFemaleFront from "@/assets/anatomy-female-front.png";
+import anatomyFemaleBack from "@/assets/anatomy-female-back.png";
 
 interface AnatomyViewerProps {
   selectedBodyPart: string | null;
@@ -67,8 +69,8 @@ const AnatomyViewer = ({ selectedBodyPart, onBodyPartSelect }: AnatomyViewerProp
           <TabsContent value="front" className="mt-4">
             <div className="relative rounded-lg overflow-hidden bg-muted/30 p-4">
               <img
-                src={anatomyMaleFront}
-                alt="Human anatomy front view"
+                src={gender === "male" ? anatomyMaleFront : anatomyFemaleFront}
+                alt={`${gender === "male" ? "Male" : "Female"} anatomy front view`}
                 className="w-full h-auto max-h-[500px] object-contain mx-auto"
               />
             </div>
@@ -77,8 +79,8 @@ const AnatomyViewer = ({ selectedBodyPart, onBodyPartSelect }: AnatomyViewerProp
           <TabsContent value="back" className="mt-4">
             <div className="relative rounded-lg overflow-hidden bg-muted/30 p-4">
               <img
-                src={anatomyMaleBack}
-                alt="Human anatomy back view"
+                src={gender === "male" ? anatomyMaleBack : anatomyFemaleBack}
+                alt={`${gender === "male" ? "Male" : "Female"} anatomy back view`}
                 className="w-full h-auto max-h-[500px] object-contain mx-auto"
               />
             </div>
