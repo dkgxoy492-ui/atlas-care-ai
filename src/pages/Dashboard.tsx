@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Stethoscope } from "lucide-react";
+import { LogOut, Stethoscope, User as UserIcon, Calendar } from "lucide-react";
 import AnatomyViewer from "@/components/AnatomyViewer";
 import ChatInterface from "@/components/ChatInterface";
 import LocationMap from "@/components/LocationMap";
@@ -57,10 +57,20 @@ const Dashboard = () => {
               I Am Doctor
             </h1>
           </div>
-          <Button onClick={handleSignOut} variant="outline" size="sm">
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/profile")} variant="outline" size="sm">
+              <UserIcon className="w-4 h-4 mr-2" />
+              Profile
+            </Button>
+            <Button onClick={() => navigate("/daily-routine")} variant="outline" size="sm">
+              <Calendar className="w-4 h-4 mr-2" />
+              Daily Routine
+            </Button>
+            <Button onClick={handleSignOut} variant="outline" size="sm">
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

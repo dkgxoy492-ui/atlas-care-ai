@@ -62,6 +62,60 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
     localStorage.setItem('chatLanguage', language);
   }, [language]);
 
+  const formatStructuredResponse = (data: any) => {
+    if (!data || typeof data !== 'object') return String(data);
+
+    let formatted = '';
+    
+    if (data.anatomical_name) {
+      formatted += `**${data.anatomical_name}**\n\n`;
+    }
+
+    if (data.confidence_score !== undefined) {
+      const confidenceColor = data.confidence_score >= 75 ? '🟢' : data.confidence_score >= 50 ? '🟡' : '🔴';
+      formatted += `${confidenceColor} Confidence: ${data.confidence_score}%\n`;
+    }
+
+    if (data.urgency) {
+      const urgencyEmoji = data.urgency === 'EMERGENCY' ? '🚨' : data.urgency === 'HIGH' ? '⚠️' : data.urgency === 'MEDIUM' ? '⚡' : 'ℹ️';
+      formatted += `${urgencyEmoji} Urgency: ${data.urgency}\n\n`;
+    }
+
+    if (data.possible_causes?.length) {
+      formatted += `**Possible Causes:**\n${data.possible_causes.map((c: string) => `• ${c}`).join('\n')}\n\n`;
+    }
+
+    if (data.red_flags?.length) {
+      formatted += `🚩 **Red Flags (Seek immediate medical attention):**\n${data.red_flags.map((f: string) => `• ${f}`).join('\n')}\n\n`;
+    }
+
+    if (data.self_care?.length) {
+      formatted += `**Self-Care Suggestions:**\n${data.self_care.map((s: string) => `• ${s}`).join('\n')}\n\n`;
+    }
+
+    if (data.yoga_suggestions?.length) {
+      formatted += `🧘 **Yoga Suggestions:**\n${data.yoga_suggestions.map((y: string) => `• ${y}`).join('\n')}\n\n`;
+    }
+
+    if (data.diet_suggestions?.length) {
+      formatted += `🥗 **Diet Suggestions:**\n${data.diet_suggestions.map((d: string) => `• ${d}`).join('\n')}\n\n`;
+    }
+
+    if (data.recommended_tests?.length) {
+      formatted += `🔬 **Recommended Tests:**\n${data.recommended_tests.map((t: string) => `• ${t}`).join('\n')}\n\n`;
+    }
+
+    if (data.sources?.length) {
+      formatted += `📚 **Sources:**\n${data.sources.map((s: any, i: number) => `${i + 1}. ${s.title}${s.excerpt ? ` - "${s.excerpt}"` : ''}`).join('\n')}\n\n`;
+    }
+
+    if (data.disclaimer) {
+      formatted += `⚕️ **${data.disclaimer}**`;
+    }
+
+    return formatted || String(data);
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -81,9 +135,20 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
 
       if (error) throw error;
 
+      // Parse structured AI response
+      let responseContent = data.response;
+      try {
+        const parsedResponse = JSON.parse(data.response);
+        // Format structured response for display
+        responseContent = formatStructuredResponse(parsedResponse);
+      } catch {
+        // If not JSON, use raw response
+        responseContent = data.response;
+      }
+
       const assistantMessage: Message = {
         role: "assistant",
-        content: data.response,
+        content: responseContent,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
