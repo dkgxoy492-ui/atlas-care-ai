@@ -14,7 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_chat_logs: {
+        Row: {
+          body_part: string | null
+          confidence_score: number | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          input_text: string
+          language: string | null
+          output_text: string | null
+          sources: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          body_part?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_text: string
+          language?: string | null
+          output_text?: string | null
+          sources?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          body_part?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          input_text?: string
+          language?: string | null
+          output_text?: string | null
+          sources?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      daily_routines: {
+        Row: {
+          created_at: string | null
+          diet_plan: Json | null
+          hydration_goal_ml: number | null
+          id: string
+          routine_date: string
+          updated_at: string | null
+          user_id: string
+          yoga_exercises: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          diet_plan?: Json | null
+          hydration_goal_ml?: number | null
+          id?: string
+          routine_date?: string
+          updated_at?: string | null
+          user_id: string
+          yoga_exercises?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          diet_plan?: Json | null
+          hydration_goal_ml?: number | null
+          id?: string
+          routine_date?: string
+          updated_at?: string | null
+          user_id?: string
+          yoga_exercises?: Json | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          created_at: string | null
+          data_collection_consent: boolean | null
+          emergency_contact_1_name: string | null
+          emergency_contact_1_phone: string | null
+          emergency_contact_1_relation: string | null
+          emergency_contact_2_name: string | null
+          emergency_contact_2_phone: string | null
+          emergency_contact_2_relation: string | null
+          fitness_level: string | null
+          gender: string | null
+          id: string
+          medical_history: Json | null
+          name: string | null
+          preferred_language: string | null
+          profile_photo_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string | null
+          data_collection_consent?: boolean | null
+          emergency_contact_1_name?: string | null
+          emergency_contact_1_phone?: string | null
+          emergency_contact_1_relation?: string | null
+          emergency_contact_2_name?: string | null
+          emergency_contact_2_phone?: string | null
+          emergency_contact_2_relation?: string | null
+          fitness_level?: string | null
+          gender?: string | null
+          id?: string
+          medical_history?: Json | null
+          name?: string | null
+          preferred_language?: string | null
+          profile_photo_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          created_at?: string | null
+          data_collection_consent?: boolean | null
+          emergency_contact_1_name?: string | null
+          emergency_contact_1_phone?: string | null
+          emergency_contact_1_relation?: string | null
+          emergency_contact_2_name?: string | null
+          emergency_contact_2_phone?: string | null
+          emergency_contact_2_relation?: string | null
+          fitness_level?: string | null
+          gender?: string | null
+          id?: string
+          medical_history?: Json | null
+          name?: string | null
+          preferred_language?: string | null
+          profile_photo_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      routine_completions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          routine_id: string | null
+          task_id: string
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          routine_id?: string | null
+          task_id: string
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          routine_id?: string | null
+          task_id?: string
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_completions_routine_id_fkey"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "daily_routines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
