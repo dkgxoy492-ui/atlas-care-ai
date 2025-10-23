@@ -5,11 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Loader2, Bot, User, Settings } from "lucide-react";
+import { Send, Loader2, Bot, User, Settings, ArrowLeft, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import ChatHistory from "./ChatHistory";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,17 +24,21 @@ interface ChatInterfaceProps {
 }
 
 const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [botName, setBotName] = useState(() => 
-    localStorage.getItem('chatBotName') || 'AI Health Assistant'
+    localStorage.getItem('chatBotName') || t('chat.title')
   );
   const [tempBotName, setTempBotName] = useState(botName);
   const [language, setLanguage] = useState(() => 
-    localStorage.getItem('chatLanguage') || 'en'
+    localStorage.getItem('appLanguage') || 'en'
   );
+  const [showHistory, setShowHistory] = useState(false);
+  const [currentChatId] = useState(() => crypto.randomUUID());
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! I'm your AI health assistant. How can I help you today? You can describe your symptoms or select a body part to learn more.",
+      content: t('chat.greeting'),
     },
   ]);
   const [input, setInput] = useState("");
@@ -59,8 +66,37 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
   }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem('chatLanguage', language);
-  }, [language]);
+    localStorage.setItem('appLanguage', language);
+    i18n.changeLanguage(language);
+  }, [language, i18n]);
+
+  const saveChatToHistory = (msgs: Message[]) => {
+    if (msgs.length <= 1) return; // Don't save if only greeting
+    
+    const savedHistory = localStorage.getItem("chatHistory");
+    const history = savedHistory ? JSON.parse(savedHistory) : [];
+    
+    const preview = msgs.find(m => m.role === "user")?.content.slice(0, 100) || "New chat";
+    
+    history.unshift({
+      id: currentChatId,
+      timestamp: new Date().toISOString(),
+      preview,
+      messages: msgs,
+    });
+    
+    // Keep only last 50 chats
+    if (history.length > 50) {
+      history.pop();
+    }
+    
+    localStorage.setItem("chatHistory", JSON.stringify(history));
+  };
+
+  const loadChatFromHistory = (msgs: Message[]) => {
+    setMessages(msgs);
+    setShowHistory(false);
+  };
 
   const formatStructuredResponse = (data: any) => {
     if (!data || typeof data !== 'object') return String(data);
@@ -151,7 +187,9 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
         content: responseContent,
       };
 
+      const updatedMessages = [...messages, userMessage, assistantMessage];
       setMessages((prev) => [...prev, assistantMessage]);
+      saveChatToHistory(updatedMessages);
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -165,58 +203,82 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
   };
 
   return (
-    <Card className="shadow-lg border-border flex flex-col h-[calc(100vh-12rem)]">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bot className="w-5 h-5 text-primary" />
-            {botName}
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-32 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-                <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="de">Deutsch</SelectItem>
-                <SelectItem value="hi">हिन्दी</SelectItem>
-                <SelectItem value="ar">العربية</SelectItem>
-                <SelectItem value="zh">中文</SelectItem>
-                <SelectItem value="ja">日本語</SelectItem>
-              </SelectContent>
-            </Select>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Chatbot Settings</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bot-name">Chatbot Name</Label>
-                    <Input
-                      id="bot-name"
-                      value={tempBotName}
-                      onChange={(e) => setTempBotName(e.target.value)}
-                      placeholder="Enter chatbot name"
-                    />
-                  </div>
-                  <Button onClick={handleSaveBotName} className="w-full">
-                    Save Changes
+    <div className="flex gap-4 h-[calc(100vh-12rem)]">
+      {showHistory && (
+        <div className="w-80 flex-shrink-0">
+          <ChatHistory onSelectChat={loadChatFromHistory} />
+        </div>
+      )}
+      
+      <Card className="shadow-lg border-border flex flex-col flex-1">
+        <CardHeader className="flex-shrink-0 border-b">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => navigate("/dashboard")}
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <Bot className="w-5 h-5 text-primary" />
+              {botName}
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ta">தமிழ்</SelectItem>
+                  <SelectItem value="es">Español</SelectItem>
+                  <SelectItem value="fr">Français</SelectItem>
+                  <SelectItem value="de">Deutsch</SelectItem>
+                  <SelectItem value="hi">हिन्दी</SelectItem>
+                  <SelectItem value="ar">العربية</SelectItem>
+                  <SelectItem value="zh">中文</SelectItem>
+                  <SelectItem value="ja">日本語</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Settings className="w-4 h-4" />
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardTitle>
-      </CardHeader>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t('chat.settings')}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bot-name">{t('chat.botName')}</Label>
+                      <Input
+                        id="bot-name"
+                        value={tempBotName}
+                        onChange={(e) => setTempBotName(e.target.value)}
+                        placeholder={t('chat.botName')}
+                      />
+                    </div>
+                    <Button onClick={handleSaveBotName} className="w-full">
+                      {t('chat.saveChanges')}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardTitle>
+        </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0">
         <ScrollArea className="flex-1 px-6">
           <div className="space-y-4 py-4">
@@ -262,12 +324,12 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
           </div>
         </ScrollArea>
 
-        <div className="border-t p-4">
+        <div className="border-t p-4 flex-shrink-0">
           <div className="flex gap-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe your symptoms or ask a health question..."
+              placeholder={t('chat.placeholder')}
               className="min-h-[60px] resize-none"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -290,11 +352,12 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Press Enter to send, Shift+Enter for new line
+            {t('chat.pressEnter')}
           </p>
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };
 

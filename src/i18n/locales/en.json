@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "dailyRoutine": "Daily Routine",
+    "back": "Back"
+  },
+  "dashboard": {
+    "title": "I Am Doctor",
+    "subtitle": "AI-Powered Health Assistant",
+    "selectBodyPart": "Select a body part to learn more",
+    "chat": "Chat with AI",
+    "profile": "Your Profile",
+    "routine": "Daily Routine",
+    "nearbyLocations": "Nearby Medical Facilities"
+  },
+  "chat": {
+    "title": "AI Health Assistant",
+    "placeholder": "Describe your symptoms or ask a health question...",
+    "send": "Send",
+    "pressEnter": "Press Enter to send, Shift+Enter for new line",
+    "history": "Chat History",
+    "newChat": "New Chat",
+    "settings": "Settings",
+    "botName": "Chatbot Name",
+    "saveChanges": "Save Changes",
+    "greeting": "Hello! I'm your AI health assistant. How can I help you today? You can describe your symptoms or select a body part to learn more."
+  },
+  "profile": {
+    "title": "Your Profile",
+    "name": "Full Name",
+    "age": "Age",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "fitnessLevel": "Fitness Level",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "language": "Preferred Language",
+    "emergencyContact1": "Emergency Contact 1",
+    "emergencyContact2": "Emergency Contact 2",
+    "contactName": "Name",
+    "contactPhone": "Phone",
+    "contactRelation": "Relation",
+    "medicalHistory": "Medical History",
+    "allergies": "Allergies",
+    "chronicConditions": "Chronic Conditions",
+    "medications": "Current Medications",
+    "dataConsent": "I consent to data collection for health insights",
+    "save": "Save Profile",
+    "export": "Export Profile Data",
+    "success": "Profile updated successfully!",
+    "error": "Failed to update profile"
+  },
+  "routine": {
+    "title": "Daily Routine",
+    "yoga": "Yoga Exercises",
+    "diet": "Diet Plan",
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "snacks": "Snacks",
+    "hydration": "Hydration Goal",
+    "ml": "ml",
+    "completed": "Completed",
+    "markComplete": "Mark Complete",
+    "success": "Task marked as complete!",
+    "error": "Failed to mark task"
+  },
+  "map": {
+    "title": "Nearby Medical Facilities",
+    "userLocation": "Your Location",
+    "pharmacies": "Pharmacies",
+    "hospitals": "Hospitals & Clinics",
+    "searchError": "Failed to search nearby locations"
+  }
+}

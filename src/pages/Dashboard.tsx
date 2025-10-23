@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { LogOut, Stethoscope, User as UserIcon, Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import AnatomyViewer from "@/components/AnatomyViewer";
 import ChatInterface from "@/components/ChatInterface";
-import LocationMap from "@/components/LocationMap";
+import GoogleMapsComponent from "@/components/GoogleMapsComponent";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
@@ -54,17 +56,17 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <Stethoscope className="w-8 h-8 text-primary" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              I Am Doctor
+              {t('dashboard.title')}
             </h1>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => navigate("/profile")} variant="outline" size="sm">
               <UserIcon className="w-4 h-4 mr-2" />
-              Profile
+              {t('nav.profile')}
             </Button>
             <Button onClick={() => navigate("/daily-routine")} variant="outline" size="sm">
               <Calendar className="w-4 h-4 mr-2" />
-              Daily Routine
+              {t('nav.dailyRoutine')}
             </Button>
             <Button onClick={handleSignOut} variant="outline" size="sm">
               <LogOut className="w-4 h-4 mr-2" />
@@ -89,7 +91,7 @@ const Dashboard = () => {
 
         {/* Location Map */}
         <div className="max-w-7xl mx-auto">
-          <LocationMap />
+          <GoogleMapsComponent />
         </div>
       </main>
     </div>
