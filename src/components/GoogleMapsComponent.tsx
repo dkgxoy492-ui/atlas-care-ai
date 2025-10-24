@@ -49,7 +49,16 @@ const GoogleMapsComponent = () => {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey || apiKey === 'undefined') {
+      toast({
+        title: "Configuration Error",
+        description: "Google Maps API key is not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your environment variables.",
+        variant: "destructive",
+      });
+      return;
+    }
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
     script.onload = initializeMap;

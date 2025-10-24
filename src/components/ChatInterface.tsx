@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Loader2, Bot, User, Settings, ArrowLeft, MessageSquare } from "lucide-react";
+import { Send, Loader2, Bot, User, Settings, ArrowLeft, MessageSquare, Mic, Volume2, Camera, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -43,8 +43,14 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
 
   const handleSaveBotName = () => {
     setBotName(tempBotName);
@@ -69,6 +75,104 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
     localStorage.setItem('appLanguage', language);
     i18n.changeLanguage(language);
   }, [language, i18n]);
+
+  // Initialize speech synthesis
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      synthRef.current = window.speechSynthesis;
+    }
+  }, []);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInput(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = () => {
+          setIsListening(false);
+          toast({
+            title: "Error",
+            description: "Failed to recognize speech. Please try again.",
+            variant: "destructive",
+          });
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+  }, [toast]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Not Supported",
+        description: "Speech recognition is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.lang = language;
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const speakText = (text: string) => {
+    if (!synthRef.current) return;
+
+    // Stop any ongoing speech
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language === 'ta' ? 'ta-IN' : 
+                     language === 'hi' ? 'hi-IN' :
+                     language === 'es' ? 'es-ES' :
+                     language === 'fr' ? 'fr-FR' :
+                     language === 'de' ? 'de-DE' :
+                     language === 'ar' ? 'ar-SA' :
+                     language === 'zh' ? 'zh-CN' :
+                     language === 'ja' ? 'ja-JP' : 'en-US';
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    synthRef.current.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (synthRef.current) {
+      synthRef.current.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      toast({
+        title: "Image Selected",
+        description: "Image will be analyzed when you send the message.",
+      });
+    }
+  };
 
   const saveChatToHistory = (msgs: Message[]) => {
     if (msgs.length <= 1) return; // Don't save if only greeting
@@ -153,11 +257,24 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
   };
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !selectedImage) return;
 
-    const userMessage: Message = { role: "user", content: input };
+    let imageBase64 = null;
+    if (selectedImage) {
+      const reader = new FileReader();
+      imageBase64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(selectedImage);
+      });
+    }
+
+    const userMessage: Message = { 
+      role: "user", 
+      content: selectedImage ? `${input}\n[Image uploaded for medicine analysis]` : input 
+    };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setSelectedImage(null);
     setIsLoading(true);
 
     try {
@@ -165,7 +282,8 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
         body: { 
           messages: [...messages, userMessage],
           selectedBodyPart,
-          language 
+          language,
+          image: imageBase64 
         },
       });
 
@@ -190,6 +308,9 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
       const updatedMessages = [...messages, userMessage, assistantMessage];
       setMessages((prev) => [...prev, assistantMessage]);
       saveChatToHistory(updatedMessages);
+      
+      // Auto-speak response
+      speakText(responseContent);
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -325,12 +446,65 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
         </ScrollArea>
 
         <div className="border-t p-4 flex-shrink-0">
+          {selectedImage && (
+            <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+              <span className="text-xs flex items-center gap-2">
+                <ImageIcon className="w-4 h-4" />
+                {selectedImage.name}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedImage(null)}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
           <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                title="Upload medicine image"
+              >
+                <Camera className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleListening}
+                disabled={isLoading}
+                className={isListening ? "bg-red-500 text-white" : ""}
+                title="Voice input"
+              >
+                <Mic className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={isSpeaking ? stopSpeaking : () => {}}
+                disabled={!isSpeaking}
+                className={isSpeaking ? "bg-blue-500 text-white" : ""}
+                title="Stop speaking"
+              >
+                <Volume2 className="w-4 h-4" />
+              </Button>
+            </div>
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={t('chat.placeholder')}
-              className="min-h-[60px] resize-none"
+              className="min-h-[60px] resize-none flex-1"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -340,7 +514,7 @@ const ChatInterface = ({ selectedBodyPart }: ChatInterfaceProps) => {
             />
             <Button
               onClick={handleSend}
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || (!input.trim() && !selectedImage)}
               size="icon"
               className="h-[60px] w-[60px]"
             >

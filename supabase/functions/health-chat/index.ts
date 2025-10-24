@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, selectedBodyPart, language = 'en' } = await req.json();
+    const { messages, selectedBodyPart, language = 'en', image } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -64,6 +64,30 @@ If confidence < 65%: Explicitly state "I'm not certain - please consult a specia
       systemPrompt += `\n\nUSER SELECTED BODY PART: ${selectedBodyPart}. Focus your response on this anatomical region.`;
     }
 
+    if (image) {
+      systemPrompt += `\n\nIMAGE ANALYSIS: User has uploaded an image of a medicine/tablet. Analyze the image and provide:
+      1. Medicine identification (name, generic name)
+      2. Primary uses and indications
+      3. Common dosage information
+      4. Important warnings and side effects
+      5. Storage instructions
+      6. Whether prescription is required
+      
+      Format the response in the same JSON structure but adapt fields appropriately for medicine information.`;
+    }
+
+    // Prepare messages with image if provided
+    const apiMessages = [...messages];
+    if (image && apiMessages.length > 0) {
+      const lastMessage = apiMessages[apiMessages.length - 1];
+      if (lastMessage.role === 'user') {
+        lastMessage.content = [
+          { type: "text", text: lastMessage.content },
+          { type: "image_url", image_url: { url: image } }
+        ];
+      }
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -71,10 +95,10 @@ If confidence < 65%: Explicitly state "I'm not certain - please consult a specia
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: image ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages,
+          ...apiMessages,
         ],
         temperature: 0.3,
         response_format: { type: "json_object" }
